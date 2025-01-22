@@ -13,6 +13,12 @@
     <a href="https://github.com/neuml/staticvectors">
         <img src="https://img.shields.io/github/last-commit/neuml/staticvectors.svg?style=flat&color=blue" alt="GitHub last commit"/>
     </a>
+    <a href="https://github.com/neuml/staticvectors/actions?query=workflow%3Abuild">
+        <img src="https://github.com/neuml/staticvectors/workflows/build/badge.svg" alt="Build Status"/>
+    </a>
+    <a href="https://coveralls.io/github/neuml/staticvectors?branch=master">
+        <img src="https://img.shields.io/coverallsCoverage/github/neuml/staticvectors" alt="Coverage Status">
+    </a>
 </p>
 
 `staticvectors` makes it easy to work with static vector models. This includes legacy models such as [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [GloVe](https://nlp.stanford.edu/projects/glove/) and [FastText](https://fasttext.cc/). While [Transformers-based models](https://github.com/huggingface/transformers) are now the primary way to embed content for vector search, these older models still have a purpose.
