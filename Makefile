@@ -18,4 +18,3 @@ test:
 # Run tests while calculating code coverage
 coverage:
 	coverage run -m unittest discover -v -s ${TEST_DIR}
-	coverage combine

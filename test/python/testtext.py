@@ -2,8 +2,10 @@
 Tests for pre-trained vector text models
 """
 
+import unittest
 
-class TestText:
+
+class TestText(unittest.TestCase):
     """
     Tests for pre-trained vector text models.
     """
