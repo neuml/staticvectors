@@ -1,0 +1,37 @@
+# GitHub Actions build workflow
+name: build
+
+on: ["push", "pull_request"]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Build
+        run: |
+          pip install -U wheel
+          pip install .[train]
+          python --version
+          make coverage
+
+      - uses: pre-commit/action@v3.0.0
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Test Coverage
+        run: coveralls --service=github
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
