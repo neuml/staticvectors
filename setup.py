@@ -24,7 +24,7 @@ setup(
     keywords="search embedding machine-learning nlp",
     python_requires=">=3.9",
     install_requires=["huggingface-hub>=0.19.0", "numpy>=1.18.4", "safetensors>=0.4.5", "tqdm>=4.48.0"],
-    extras_requires={"train": ["fasttext-wheel>=0.9.2", "nanopq>=0.2.1"]},
+    extras_require={"train": ["fasttext-wheel>=0.9.2", "nanopq>=0.2.1"]},
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",

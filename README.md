@@ -21,7 +21,7 @@
     </a>
 </p>
 
-`staticvectors` makes it easy to work with static vector models. This includes legacy models such as [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [GloVe](https://nlp.stanford.edu/projects/glove/) and [FastText](https://fasttext.cc/). While [Transformers-based models](https://github.com/huggingface/transformers) are now the primary way to embed content for vector search, these older models still have a purpose.
+`staticvectors` makes it easy to work with static vector models. This includes word vector models such as [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [GloVe](https://nlp.stanford.edu/projects/glove/) and [FastText](https://fasttext.cc/). While [Transformers-based models](https://github.com/huggingface/transformers) are now the primary way to embed content for vector search, these older models still have a purpose.
 
 For example, this [FastText Language identification model](https://fasttext.cc/docs/en/language-identification.html) is still one of the fastest and most efficient ways to detect languages. N-grams work well for this task and it's lightning fast.
 
@@ -29,11 +29,13 @@ Additionally, there are historical, low resource and other languages where there
 
 ## What's wrong with the existing libraries
 
-Unfortunately, the tooling to use these models is aging and in some cases unmaintained. The world is moving forward and these libraries are getting harder to install.
+Unfortunately, the tooling to use word vector models is aging and in some cases unmaintained. The world is moving forward and these libraries are getting harder to install.
 
 As a concrete example, the build script for [txtai](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml#L42) often has to be modified to get FastText to work on all supported platforms. There are pre-compiled versions but they're often slow to support the latest version of Python or fix issues.
 
-This project breathes life into these models and integrates them with modern tooling such as the [Hugging Face Hub](https://huggingface.co/models) and [Safetensors](https://github.com/huggingface/safetensors). While it's pure Python, it's still fast due to it's heavy usage of [NumPy](https://github.com/numpy/numpy) and [vectorization techniques](https://numpy.org/doc/stable/user/whatisnumpy.html#why-is-numpy-fast). This makes it easier to maintain as it's only a single install package to maintain.
+This project breathes life into word vector models and integrates them with modern tooling such as the [Hugging Face Hub](https://huggingface.co/models) and [Safetensors](https://github.com/huggingface/safetensors). While it's pure Python, it's still fast due to it's heavy usage of [NumPy](https://github.com/numpy/numpy) and [vectorization techniques](https://numpy.org/doc/stable/user/whatisnumpy.html#why-is-numpy-fast).
+
+This makes it easier to maintain as it's only a single install package to maintain.
 
 ## Installation
 The easiest way to install is via pip and PyPI
@@ -49,3 +51,12 @@ Python 3.9+ is supported. Using a Python [virtual environment](https://docs.pyth
 ```
 pip install git+https://github.com/neuml/staticvectors
 ```
+
+## Libraries for Static Embeddings with Transformers models
+
+This library is primarily focused on word vector models. There is a recent push to distill Transformers models into static embeddings models. The difference between `staticvectors` and these libraries is that the base models are Transformers models. Additionally, they use Transformers tokenizers where as word vector models tokenize on whitespace and use n-grams.
+
+Check out these links for more on static embeddings with Transformers models.
+
+- [Model2Vec](https://github.com/MinishLab/model2vec) - Turn any sentence transformer into a really small static model
+- [Static Sentence Transformers](https://huggingface.co/blog/static-embeddings) - Run 100x to 400x faster on CPU than state-of-the-art embedding models

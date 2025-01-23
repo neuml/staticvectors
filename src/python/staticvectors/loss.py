@@ -26,10 +26,6 @@ class LossFactory:
             Loss
         """
 
-        # Only create a loss instance when frequency counts and weights are available
-        if counts is None or weights is None:
-            return None
-
         if loss == "softmax":
             return SoftmaxLoss(counts, weights)
         if loss == "hs":

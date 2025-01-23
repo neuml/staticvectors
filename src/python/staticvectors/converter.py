@@ -19,7 +19,8 @@ import numpy as np
 from tqdm.auto import tqdm
 
 from .database import Database
-from .modelio import StaticVectorsIO
+from .filesystem import FileSystem
+from .model import StaticVectors
 
 
 class TextConverter:
@@ -35,15 +36,16 @@ class TextConverter:
         if not TRAIN:
             raise ImportError('Training libraries are not available - install "train" extra to enable')
 
-    def __call__(self, model, path, quantize=None):
+    def __call__(self, model, path, quantize=None, storage="filesystem"):
         """
         Exports pre-trained vectors stored as text to a StaticVectors model.
 
         Args:
             model: model path or instance
-            path: output directory to store exported model
+            path: output path to store exported model
             quantize: enables quantization and sets the number of Product Quantization (PQ)
                       subspaces
+            storage: sets the staticvectors storage format (filesystem or database)
         """
 
         with open(model, encoding="utf-8") as f:
@@ -60,30 +62,44 @@ class TextConverter:
             # Join into single vectors array
             vectors = np.array(vectors)
 
-        # Initialize writer
-        writer = StaticVectorsIO(path, create=True)
+        # Generate configuration and tokens
+        config = {"format": "vectors", "source": os.path.basename(model), "total": total, "dim": dimensions}
+        tokens = {token: x for x, token in enumerate(tokens)}
 
-        # Save model to output path
-        writer.saveconfig({"format": "vectors", "source": os.path.basename(model), "total": total, "dim": dimensions})
-        self.savetensors(writer, vectors, quantize)
-        writer.savevocab({token: x for x, token in enumerate(tokens)})
+        # Save model
+        self.save(path, storage, config, vectors, quantize, tokens=tokens)
 
-    def savetensors(self, writer, vectors, quantize=None, weights=None):
+    def save(self, path, storage, config, vectors, quantize, weights=None, tokens=None, labels=None, counts=None):
         """
-        Saves model tensors using standard writer. This method applies quantization, if necessary.
+        Saves a StaticVectors model to the underlying storage layer.
 
         Args:
-            writer: StaticVectorsIO instance
+            path: output path to store model
+            storage: storage format
+            config: model configuration
             vectors: model vectors
             quantize: number of subspaces for quantization
             weights: model weights (for classification models)
+            tokens: tokens used in model
+            labels: classification labels
+            counts: label frequency counts
         """
 
-        # Apply quantization, if necessary
-        vectors, pq = self.quantize(vectors, quantize) if quantize else (vectors, None)
+        if storage == "sqlite":
+            # Create and save database
+            writer = Database(path, create=True)
+            writer.save(vectors, tokens)
+        else:
+            # Initialize writer
+            writer = FileSystem(path, create=True)
 
-        # Write tensors file
-        writer.savetensors(vectors, pq, weights)
+            # Apply quantization, if necessary
+            vectors, pq = self.quantize(vectors, quantize) if quantize else (vectors, None)
+
+            # Save model to output path
+            writer.saveconfig(config)
+            writer.savetensors(vectors, pq, weights)
+            writer.savevocab(tokens, labels, counts)
 
     def quantize(self, vectors, quantize):
         """
@@ -114,13 +130,13 @@ class FastTextConverter(TextConverter):
     Converts a FastText model to a StaticVectors model.
     """
 
-    def __call__(self, model, path, quantize=None):
+    def __call__(self, model, path, quantize=None, storage="filesystem"):
         """
         Exports a FastText model to output path.
 
         Args:
             model: model path or instance
-            path: output directory to store exported model
+            path: output path to store exported model
             quantize: enables quantization and sets the number of Product Quantization (PQ)
                       subspaces
         """
@@ -131,8 +147,8 @@ class FastTextConverter(TextConverter):
         args = model.f.getArgs()
         supervised = args.model.name == "supervised"
 
-        # Initialize writer
-        writer = StaticVectorsIO(path, create=True)
+        # Generate configuration
+        config = self.config(source, args)
 
         # Extract model data
         vectors = model.get_input_matrix()
@@ -143,10 +159,8 @@ class FastTextConverter(TextConverter):
         labels, counts = model.get_labels(include_freq=True) if supervised else (None, None)
         counts = {i: int(x) for i, x in enumerate(counts)} if supervised else None
 
-        # Save model to output path
-        writer.saveconfig(self.config(source, args))
-        self.savetensors(writer, vectors, quantize, weights)
-        writer.savevocab(tokens, labels, counts)
+        # Save model
+        self.save(path, storage, config, vectors, quantize, weights, tokens, labels, counts)
 
     def config(self, source, args):
         """
@@ -201,21 +215,18 @@ class FastTextConverter(TextConverter):
         return config
 
 
-class MagnitudeConverter(TextConverter):
+class StaticVectorsConverter(TextConverter):
     """
-    Converts a Magnitude SQLite vectors file to a StaticVectors model.
+    Converts a StaticVectors model to another format. This enables rebuilding an existing model with different
+    parameters.
     """
 
-    def __call__(self, model, path, quantize=None):
-        database = Database(model)
+    def __call__(self, model, path, quantize=None, storage="filesystem"):
+        model = StaticVectors(model)
 
-        # Get vectors. Magnitude ids start at 1.
-        vectors = np.array([database[x + 1] for x in tqdm(range(database.total), total=database.total)])
-
-        # Initialize writer
-        writer = StaticVectorsIO(path, create=True)
+        # Get model vectors and tokens
+        vectors = np.array([model.vectors[x] for x in tqdm(range(len(model.vectors)), total=len(model.vectors))])
+        tokens = dict(model.tokens.items())
 
         # Save model
-        writer.saveconfig(database.config())
-        self.savetensors(writer, vectors, quantize)
-        writer.savevocab(database.tokens())
+        self.save(path, storage, model.config, vectors, quantize, model.weights, tokens, model.labels, model.counts)

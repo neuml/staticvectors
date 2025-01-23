@@ -2,16 +2,15 @@
 Model module
 """
 
-import warnings
-
 import numpy as np
 
 from .loss import LossFactory
 from .tokenizer import NgramTokenizer
 from .xhash import FNV
 
+# Storage formats
 from .database import Database
-from .modelio import StaticVectorsIO
+from .filesystem import FileSystem
 
 
 class StaticVectors:
@@ -27,6 +26,9 @@ class StaticVectors:
         self.vectors, self.quantization = None, None
         self.weights = None
         self.tokens, self.labels, self.counts = None, None, None
+
+        # Loss instance, used for classification models
+        self.loss = None
 
         # Token cache
         self.cache = {}
@@ -47,17 +49,14 @@ class StaticVectors:
         """
 
         if Database.isdatabase(path):
-            # Raise warning when loading a legacy model
-            warnings.warn("Loading a legacy SQLite vectors magnitude file. This model should be rebuilt as a staticvectors model.", FutureWarning)
-
-            # Support direct load of legacy magnitude file for backwards compatibility
+            # SQLite vectors storage format
             self.vectors = Database(path)
             self.config = self.vectors.config()
             self.tokens = self.vectors.tokens()
 
         else:
-            # Load StaticVectors Model
-            reader = StaticVectorsIO(path)
+            # File system vectors storage format
+            reader = FileSystem(path)
 
             # Load model files
             self.config = reader.loadconfig()
@@ -65,7 +64,7 @@ class StaticVectors:
             self.tokens, self.labels, self.counts = reader.loadvocab()
 
             # Cache tokens from vocabulary
-            if "bucket" in self.config:
+            if self.isclassification():
                 for token in self.tokens:
                     self.cache[token] = self.tokenize(token)
 
@@ -86,7 +85,7 @@ class StaticVectors:
 
         embeddings = []
         for token in tokens:
-            if "bucket" in self.config:
+            if self.isclassification():
                 # Vectors from a FastText model
                 embeddings.append(self.query(token))
             else:
@@ -117,6 +116,17 @@ class StaticVectors:
         # Create query vector from input text
         vector = self.query(text)
         return [(self.labels[uid].replace(self.config["label"], ""), score) for uid, score in self.loss(vector, limit)]
+
+    def isclassification(self):
+        """
+        Checks if this model is trained for classification.
+
+        Returns:
+            True if this model is trained for classification, False otherwise
+        """
+
+        # Bucket is only set for classification models
+        return self.config.get("bucket")
 
     def getvectors(self, tokenids):
         """
@@ -163,11 +173,11 @@ class StaticVectors:
             return self.getvectors(self.tokens[token])
 
         # Subtoken parameters
-        minn = minn if minn else self.config.get("minn", 3)
-        maxn = maxn if maxn else self.config.get("maxn", 6)
+        minn = self.config.get("minn", 3)
+        maxn = self.config.get("maxn", 6)
 
         # Generate vector for out of vocabulary term
-        tokenids = [self.tokens[token] for x in self.tokenizer(token, minn, maxn) if token in self.tokens]
+        tokenids = [self.tokens[subtoken] for subtoken in self.tokenizer(token, minn, maxn) if subtoken in self.tokens]
         return self.getvectors(tokenids).mean(axis=0)
 
     def query(self, text):
@@ -242,7 +252,7 @@ class StaticVectors:
         maxn = maxn if maxn else self.config.get("maxn", 6)
 
         # Tokenize into subtokens
-        tokens = self.tokenizer(f"<{token}>", minn, maxn)
+        tokens = self.tokenizer(f"<{token}>", minn, maxn) if minn else None
 
         # Create token ids list and return
         return np.concatenate(

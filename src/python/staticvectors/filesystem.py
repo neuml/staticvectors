@@ -12,15 +12,15 @@ from safetensors import safe_open
 from safetensors.numpy import save_file
 
 
-class StaticVectorsIO:
+class FileSystem:
     """
-    Defines the StaticVector model format. This class has methods to read and write StaticVector
-    model files.
+    FileSystem tensor storage Stores config, vectors and vocabulary in a file system directory.
+    Supports integration with the Hugging Face Hub.
     """
 
     def __init__(self, path, create=False):
         """
-        Creates a new StaticVectorsIO instance.
+        Creates a new FileSystem instance.
 
         Args:
             path: model path
