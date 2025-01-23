@@ -58,6 +58,55 @@ Python 3.9+ is supported. Using a Python [virtual environment](https://docs.pyth
 pip install git+https://github.com/neuml/staticvectors
 ```
 
+## Quickstart
+
+See the following examples on how to use this library.
+
+### Convert an existing FastText model
+
+```python
+from staticvectors import FastTextConverter, StaticVectors
+
+# Download https://huggingface.co/julien-c/fasttext-language-id/blob/main/lid.176.bin
+converter = FastTextConverter()
+converter("lid.176.bin", "langid")
+
+# Load the converted model - runs in pure Python, FastText library install not required for inference
+model = StaticVectors("langid")
+model.predict(["Hello, what language is this?"])
+```
+
+### Load an existing Magnitude SQLite database
+
+This library replaces [Magnitude Lite](https://github.com/neuml/magnitude) which is now deprecated. Magnitude libraries are supported by this library.
+
+```python
+from staticvectors import StaticVectors
+
+model = StaticVectors("/path/to/vectors.magnitude")
+
+# Get word vectors
+model.embeddings(["hello"])
+```
+
+### Convert and quantize
+
+```python
+from staticvectors import FastTextConverter, StaticVectors
+
+# Download https://huggingface.co/julien-c/fasttext-language-id/blob/main/lid.176.bin
+converter = FastTextConverter()
+
+# Quantize with PQ and two subspaces - model goes from 125MB to 4MB with minimal accuracy impacts!
+converter("lid.176.bin", "langid-pq2x256", quantize=2)
+
+# Load the converted model - runs in pure Python, FastText library install not required for inference
+model = StaticVectors("langid")
+model.predict(["Hello, what language is this?"])
+```
+
+See the unit tests in this project here for more examples.
+
 ## Libraries for Static Embeddings with Transformers models
 
 This library is primarily focused on word vector models. There is a recent push to distill Transformers models into static embeddings models. The difference between `staticvectors` and these libraries is that the base models are Transformers models. Additionally, they use Transformers tokenizers where as word vector models tokenize on whitespace and use n-grams.
