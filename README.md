@@ -1,4 +1,10 @@
-# staticvectors: Work with static vector models
+<p align="center">
+    <img src="https://raw.githubusercontent.com/neuml/staticvectors/master/logo.png"/>
+</p>
+
+<p align="center">
+    <b>Work with static vector models</b>
+</p>
 
 <p align="center">
     <a href="https://github.com/neuml/staticvectors/releases">
