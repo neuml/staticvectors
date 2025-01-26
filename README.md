@@ -73,7 +73,7 @@ converter("lid.176.bin", "langid")
 
 # Load the converted model - runs in pure Python, FastText library install not required for inference
 model = StaticVectors("langid")
-model.predict(["Hello, what language is this?"])
+model.predict("Hello, what language is this?")
 ```
 
 ### Load an existing Magnitude SQLite database
@@ -102,7 +102,7 @@ converter("lid.176.bin", "langid-pq2x256", quantize=2)
 
 # Load the converted model - runs in pure Python, FastText library install not required for inference
 model = StaticVectors("langid")
-model.predict(["Hello, what language is this?"])
+model.predict("Hello, what language is this?")
 ```
 
 ### Train a new model

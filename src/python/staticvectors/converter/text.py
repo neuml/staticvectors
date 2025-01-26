@@ -35,7 +35,7 @@ class TextConverter(Converter):
             # Read vectors
             for line in tqdm(f, total=total):
                 # Read token and vector
-                fields = line.strip().split()
+                fields = line.split(" ")
                 tokens.append(fields[0])
                 vectors.append(np.loadtxt(fields[1:], dtype=np.float32))
 
