@@ -60,7 +60,7 @@ pip install git+https://github.com/neuml/staticvectors
 
 ## Quickstart
 
-See the following examples on how to use this library. Note that many of the examples below require the 
+See the following examples on how to use this library. Note that many of the examples below require the `train` extra.
 
 ### Convert an existing FastText model
 
