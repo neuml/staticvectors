@@ -7,7 +7,7 @@ import unittest
 import tempfile
 
 
-from staticvectors import FastTextConverter, FileSystem, StaticVectors
+from staticvectors import FastTextConverter, Retriever, StaticVectors
 
 
 class TestLanguage(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestLanguage(unittest.TestCase):
         """
 
         # Get FastText language detection model
-        langmodel = FileSystem(None).download("julien-c/fasttext-language-id/lid.176.bin")
+        langmodel = Retriever().download("julien-c/fasttext-language-id/lid.176.bin")
         path = os.path.join(tempfile.gettempdir(), "langid")
 
         # Test both the standard and a quantized model

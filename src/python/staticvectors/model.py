@@ -5,17 +5,14 @@ Model module
 import numpy as np
 
 from .loss import LossFactory
+from .storage import StorageFactory
 from .tokenizer import NgramTokenizer
 from .xhash import FNV
-
-# Storage formats
-from .database import Database
-from .filesystem import FileSystem
 
 
 class StaticVectors:
     """
-    Generates static embeddings and also supports multi-label classification.
+    Generates static embeddings. Also supports multi-label classification.
     """
 
     def __init__(self, path=None):
@@ -48,28 +45,19 @@ class StaticVectors:
             path: model path
         """
 
-        if Database.isdatabase(path):
-            # SQLite vectors storage format
-            self.vectors = Database(path)
-            self.config = self.vectors.config()
-            self.tokens = self.vectors.tokens()
+        # Create a storage reader
+        reader = StorageFactory.create(path)
 
-        else:
-            # File system vectors storage format
-            reader = FileSystem(path)
+        # Load model data
+        self.config, self.vectors, self.quantization, self.weights, self.tokens, self.labels, self.counts = reader.load()
 
-            # Load model files
-            self.config = reader.loadconfig()
-            self.vectors, self.quantization, self.weights = reader.loadtensors()
-            self.tokens, self.labels, self.counts = reader.loadvocab()
+        # Load additional parameters with classification models
+        if self.isclassification():
+            for token in self.tokens:
+                self.cache[token] = self.tokenize(token)
 
-            # Cache tokens from vocabulary
-            if self.isclassification():
-                for token in self.tokens:
-                    self.cache[token] = self.tokenize(token)
-
-            # Create model loss when label weights are available
-            self.loss = LossFactory.create(self.config["loss"], self.counts, self.weights) if self.weights is not None else None
+        # Create model loss when label weights are available
+        self.loss = LossFactory.create(self.config["loss"], self.counts, self.weights) if self.weights is not None else None
 
     def embeddings(self, tokens, normalize=True):
         """
@@ -170,15 +158,17 @@ class StaticVectors:
 
         # Token is in the vocabulary
         if token in self.tokens:
-            return self.getvectors(self.tokens[token])
+            tokenids = [self.tokens[token]]
 
-        # Subtoken parameters
-        minn = self.config.get("minn", 3)
-        maxn = self.config.get("maxn", 6)
+        else:
+            # Subtoken parameters
+            minn = self.config.get("minn", 3)
+            maxn = self.config.get("maxn", 6)
 
-        # Generate vector for out of vocabulary term
-        tokenids = [self.tokens[subtoken] for subtoken in self.tokenizer(token, minn, maxn) if subtoken in self.tokens]
-        return self.getvectors(tokenids).mean(axis=0)
+            # Generate vector for out of vocabulary term
+            tokenids = [self.tokens[subtoken] for subtoken in self.tokenizer(token, minn, maxn) if subtoken in self.tokens]
+
+        return self.getvectors(np.array(tokenids)).mean(axis=0)
 
     def query(self, text):
         """

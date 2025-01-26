@@ -1,80 +1,12 @@
 """
-Loss module
+HierarchicalSoftmaxLoss module
 """
 
 import heapq
 
 import numpy as np
 
-
-class LossFactory:
-    """
-    Methods to create loss functions.
-    """
-
-    @staticmethod
-    def create(loss, counts, weights):
-        """
-        Creates a loss function.
-
-        Args:
-            loss: loss name
-            counts: frequency count data
-            weights: output weight matrix
-
-        Returns:
-            Loss
-        """
-
-        if loss == "softmax":
-            return SoftmaxLoss(counts, weights)
-        if loss == "hs":
-            return HierarchicalSoftmaxLoss(counts, weights)
-
-        raise ValueError(f"{loss} not currently implemented")
-
-
-class Loss:
-    """
-    Base loss.
-    """
-
-    def __init__(self, counts, weights):
-        """
-        Creates a new Loss instance.
-
-        Args:
-            counts: frequency count data
-            weights: output weight matrix
-        """
-
-        self.counts = counts
-        self.weights = weights
-
-
-class SoftmaxLoss(Loss):
-    """
-    Standard softmax loss.
-    """
-
-    def __call__(self, vector, limit):
-        """
-        Predicts the label for vector using softmax.
-
-        Args:
-            vector: input vector
-            limit: max labels to return
-
-        Returns:
-            [(label.id, score)]
-        """
-
-        # Softmax calculation
-        scores = np.dot(vector, self.weights.T)
-        scores = np.exp(scores) / (np.exp(scores)).sum()
-
-        # Get up to limit scores and return
-        return [(x, scores[x]) for x in np.argsort(-scores)[:limit]]
+from .base import Loss
 
 
 class HierarchicalSoftmaxLoss(Loss):

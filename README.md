@@ -60,7 +60,7 @@ pip install git+https://github.com/neuml/staticvectors
 
 ## Quickstart
 
-See the following examples on how to use this library.
+See the following examples on how to use this library. Note that many of the examples below require the 
 
 ### Convert an existing FastText model
 
@@ -103,6 +103,16 @@ converter("lid.176.bin", "langid-pq2x256", quantize=2)
 # Load the converted model - runs in pure Python, FastText library install not required for inference
 model = StaticVectors("langid")
 model.predict(["Hello, what language is this?"])
+```
+
+### Train a new model
+
+```python
+from staticvectors import StaticVectorsTrainer
+
+# Internally builds a FastText model then exports it to a StaticVectors model
+trainer = StaticVectorsTrainer()
+model = trainer("path/to/training.txt", size=100, mincount=1, path="model output path")
 ```
 
 See the unit tests in this project here for more examples.

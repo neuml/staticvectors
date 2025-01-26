@@ -26,20 +26,22 @@ class TestSQLite(unittest.TestCase):
         # Generate test model
         model, data = self.build()
 
-        path = os.path.join(tempfile.gettempdir(), "vectors.sqlite")
-        converter = StaticVectorsConverter()
-        converter(model, path, storage="sqlite")
+        # Test both file and directory storage
+        for storefile, path in [(True, "vectors.sqlite"), (False, "vectors-sqlite")]:
+            path = os.path.join(tempfile.gettempdir(), path)
+            converter = StaticVectorsConverter()
+            converter(model, path, storage="sqlite", storefile=storefile)
 
-        # Load the model
-        sv = StaticVectors(path)
-        self.assertTrue(np.allclose(np.array(sv.vectors), data, atol=1e-5))
+            # Load the model
+            sv = StaticVectors(path)
+            self.assertTrue(np.allclose(np.array(sv.vectors), data, atol=1e-5))
 
-        # Compare generated embeddings
-        self.assertTrue(np.allclose(sv.embeddings(["hello"])[0], data[1], atol=1e-5))
+            # Compare generated embeddings
+            self.assertTrue(np.allclose(sv.embeddings(["hello"])[0], data[1], atol=1e-5))
 
-        # pylint: disable=W0104
-        with self.assertRaises(IndexError):
-            sv.tokens["abc1234"]
+            # pylint: disable=W0104
+            with self.assertRaises(IndexError):
+                sv.tokens["abc1234"]
 
     def testLegacy(self):
         """
