@@ -37,6 +37,65 @@ class StaticVectors:
         if path:
             self.load(path)
 
+    def embeddings(self, token, normalize=True):
+        """
+        Gets embeddings vector for token.
+
+        Args:
+            token: token|list
+            normalize: if True (default), vectors will be normalized
+
+        Returns:
+            array of embeddings vectors
+        """
+
+        # format inputs
+        tokens = [token] if isinstance(token, str) else token
+
+        embeddings = []
+        for x in tokens:
+            if self.isclassification():
+                # Vectors from a FastText model
+                embeddings.append(self.query(x))
+            else:
+                # Vectors from a vectors dump
+                embeddings.append(self.lookup(x))
+
+        # Get embeddings as np.array
+        embeddings = np.array(embeddings)
+
+        # Normalize vectors
+        if normalize:
+            self.normalize(embeddings)
+
+        return embeddings[0] if isinstance(token, str) else embeddings
+
+    def predict(self, text, limit=1):
+        """
+        Predicts a label for text. This only works for supervised classification models.
+
+        Args:
+            text: text|list
+            limit: maximum labels to return
+
+        Returns:
+            predictions as [(label, score)]
+        """
+
+        if not self.loss:
+            raise ValueError("Predictions only supported with classification models")
+
+        # Format inputs
+        texts = [text] if isinstance(text, str) else text
+
+        results = []
+        for x in texts:
+            # Create query vector from input text
+            vector = self.query(x)
+            results.append([(self.labels[uid].replace(self.config["label"], ""), score) for uid, score in self.loss(vector, limit)])
+
+        return results[0] if isinstance(text, str) else results
+
     def load(self, path):
         """
         Loads model at path.
@@ -58,52 +117,6 @@ class StaticVectors:
 
         # Create model loss when label weights are available
         self.loss = LossFactory.create(self.config["loss"], self.counts, self.weights) if self.weights is not None else None
-
-    def embeddings(self, tokens, normalize=True):
-        """
-        Gets embeddings vectors for tokens.
-
-        Args:
-            tokens: list of tokens to get
-            normalize: if True (default), vectors will be normalized
-
-        Returns:
-            array of embeddings vectors
-        """
-
-        embeddings = []
-        for token in tokens:
-            if self.isclassification():
-                # Vectors from a FastText model
-                embeddings.append(self.query(token))
-            else:
-                # Vectors from a vectors dump
-                embeddings.append(self.lookup(token))
-
-        # Get embeddings as np.array
-        embeddings = np.array(embeddings)
-
-        # Normalize vectors
-        if normalize:
-            self.normalize(embeddings)
-
-        return embeddings
-
-    def predict(self, text, limit=1):
-        """
-        Predicts a label for text. This only works for supervised classification models.
-
-        Args:
-            text: input text
-            limit: maximum labels to return
-        """
-
-        if not self.loss:
-            raise ValueError("Predictions only supported with classification models")
-
-        # Create query vector from input text
-        vector = self.query(text)
-        return [(self.labels[uid].replace(self.config["label"], ""), score) for uid, score in self.loss(vector, limit)]
 
     def isclassification(self):
         """
@@ -168,7 +181,8 @@ class StaticVectors:
             # Generate vector for out of vocabulary term
             tokenids = [self.tokens[subtoken] for subtoken in self.tokenizer(token, minn, maxn) if subtoken in self.tokens]
 
-        return self.getvectors(np.array(tokenids)).mean(axis=0)
+        # Generate a mean vector for all subtokens. Otherwise, generate a token vector.
+        return self.getvectors(np.array(tokenids)).mean(axis=0) if tokenids else self.generate(token)
 
     def query(self, text):
         """
@@ -265,3 +279,22 @@ class StaticVectors:
         """
 
         return len(self.tokens) + (self.hasher(tokens) % self.config["bucket"])
+
+    def generate(self, token):
+        """
+        Generates a vector for an out of vocabulary token. This is a deterministic algorithm, the same
+        vector will be generated for the same token.
+
+        Args:
+            token: token
+
+        Returns:
+            vector
+        """
+
+        # Get a hash for the token and use it as the random seed
+        seed = self.hasher([token])[0]
+        random = np.random.default_rng(seed)
+
+        # Generate the vector
+        return random.uniform(-1, 1, self.config["dim"])

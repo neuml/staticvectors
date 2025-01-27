@@ -85,8 +85,8 @@ from staticvectors import StaticVectors
 
 model = StaticVectors("/path/to/vectors.magnitude")
 
-# Get word vectors
-model.embeddings(["hello"])
+# Get word vector
+model.embeddings("hello")
 ```
 
 ### Convert and quantize

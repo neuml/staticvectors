@@ -13,7 +13,7 @@ from .base import Storage
 # pylint: disable=W0223
 class Database(Storage):
     """
-    SQLite storage format. Also supports legacy magnitude-light databases (https://github.com/neuml/magnitude).
+    SQLite storage format. Also supports legacy magnitude-lite databases (https://github.com/neuml/magnitude).
 
     Configuration, vectors and vocabulary are all stored in SQLite. Configuration can optionally be mirrored in a JSON file to facilitate
     loading from the Hugging Face Hub.
