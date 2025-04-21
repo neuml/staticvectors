@@ -22,7 +22,7 @@ setup(
     packages=find_packages(where="src/python"),
     package_dir={"": "src/python"},
     keywords="search embedding machine-learning nlp",
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     install_requires=["huggingface-hub>=0.19.0", "numpy>=1.18.4", "safetensors>=0.4.5", "tqdm>=4.48.0"],
     extras_require={"train": ["fasttext-wheel>=0.9.2", "nanopq>=0.2.1"]},
     classifiers=[
